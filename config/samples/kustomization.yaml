@@ -1,0 +1,4 @@
+## Append samples of your project ##
+resources:
+- neo4g_v1alpha1_neo4gcluster.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples

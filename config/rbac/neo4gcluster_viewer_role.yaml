@@ -1,0 +1,29 @@
+# This rule is not used by the project neo4g-operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants read-only access to neo4g.neo4g.io resources.
+# This role is intended for users who need visibility into these resources
+# without permissions to modify them. It is ideal for monitoring purposes and limited-access viewing.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: neo4g-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: neo4gcluster-viewer-role
+rules:
+- apiGroups:
+  - neo4g.neo4g.io
+  resources:
+  - neo4gclusters
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - neo4g.neo4g.io
+  resources:
+  - neo4gclusters/status
+  verbs:
+  - get

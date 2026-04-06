@@ -1,0 +1,12 @@
+apiVersion: v2
+name: neo4g-operator
+description: A Helm chart for the Neo4g Kubernetes Operator
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - neo4g
+  - graph-database
+  - operator
+maintainers:
+  - name: seankohjs
