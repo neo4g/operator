@@ -1,5 +1,8 @@
 # neo4g-operator
 
+> [!WARNING]
+> This is a hobby/learning project and is **not ready for production use**. Expect breaking changes, missing features, and no stability guarantees.
+
 Kubernetes operator for [Neo4g](https://github.com/neo4g/neo4g) — manages Neo4g graph database clusters on Kubernetes.
 
 ## Getting Started
