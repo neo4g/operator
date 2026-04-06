@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/seankohjs/neo4g-operator
+  repository: ghcr.io/neo4g/operator
   tag: "0.1.0"
   pullPolicy: IfNotPresent
 
