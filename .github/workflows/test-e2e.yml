@@ -2,7 +2,25 @@ name: E2E Tests
 
 on:
   push:
+    paths:
+      - "**.go"
+      - go.mod
+      - go.sum
+      - Makefile
+      - Dockerfile
+      - "api/**"
+      - "config/**"
+      - "test/**"
   pull_request:
+    paths:
+      - "**.go"
+      - go.mod
+      - go.sum
+      - Makefile
+      - Dockerfile
+      - "api/**"
+      - "config/**"
+      - "test/**"
 
 jobs:
   test-e2e:

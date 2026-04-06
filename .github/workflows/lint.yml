@@ -2,7 +2,19 @@ name: Lint
 
 on:
   push:
+    paths:
+      - "**.go"
+      - go.mod
+      - go.sum
+      - Makefile
+      - .golangci.yml
   pull_request:
+    paths:
+      - "**.go"
+      - go.mod
+      - go.sum
+      - Makefile
+      - .golangci.yml
 
 jobs:
   lint:

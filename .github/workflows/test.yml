@@ -2,7 +2,21 @@ name: Tests
 
 on:
   push:
+    paths:
+      - "**.go"
+      - go.mod
+      - go.sum
+      - Makefile
+      - "api/**"
+      - "config/**"
   pull_request:
+    paths:
+      - "**.go"
+      - go.mod
+      - go.sum
+      - Makefile
+      - "api/**"
+      - "config/**"
 
 jobs:
   test:
