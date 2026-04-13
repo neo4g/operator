@@ -28,7 +28,7 @@ type Neo4gClusterSpec struct {
 	// +kubebuilder:default=1
 	Replicas int32 `json:"replicas"`
 
-	// +kubebuilder:default="ghcr.io/seankohjs/neo4g:latest"
+	// +kubebuilder:default="ghcr.io/neo4g/neo4g:latest"
 	Image string `json:"image,omitempty"`
 
 	// +optional
@@ -72,6 +72,10 @@ type Neo4gConfig struct {
 }
 
 type GatewaySpec struct {
+	// +kubebuilder:default="ghcr.io/neo4g/gateway:latest"
+	// +optional
+	Image string `json:"image,omitempty"`
+
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:default=1
 	// +optional

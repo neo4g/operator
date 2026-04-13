@@ -168,7 +168,7 @@ func (r *Neo4gClusterReconciler) reconcileStatefulSet(ctx context.Context, c *ne
 
 		image := c.Spec.Image
 		if image == "" {
-			image = "ghcr.io/seankohjs/neo4g:latest"
+			image = "ghcr.io/neo4g/neo4g:latest"
 		}
 
 		// Shell wrapper to derive role from StatefulSet ordinal:
@@ -184,8 +184,9 @@ exec neo4g`
 
 		container := corev1.Container{
 			Name:    "neo4g",
-			Image:   image,
-			Command: []string{"sh", "-c", roleScript},
+			Image:           image,
+			ImagePullPolicy: corev1.PullAlways,
+			Command:         []string{"sh", "-c", roleScript},
 			Ports: []corev1.ContainerPort{{
 				Name:          "neo4g",
 				ContainerPort: neo4gPort,
@@ -341,15 +342,18 @@ func (r *Neo4gClusterReconciler) reconcileGatewayDeployment(ctx context.Context,
 			}
 		}
 
-		image := c.Spec.Image
-		if image == "" {
-			image = "ghcr.io/seankohjs/neo4g:latest"
+		gwImage := ""
+		if c.Spec.Gateway != nil && c.Spec.Gateway.Image != "" {
+			gwImage = c.Spec.Gateway.Image
+		}
+		if gwImage == "" {
+			gwImage = "ghcr.io/neo4g/gateway:latest"
 		}
 
 		container := corev1.Container{
-			Name:    "neo4g-gateway",
-			Image:   image,
-			Command: []string{"neo4g-gateway"},
+			Name:  "neo4g-gateway",
+			Image:           gwImage,
+			ImagePullPolicy: corev1.PullAlways,
 			Ports: []corev1.ContainerPort{{
 				Name:          "gateway",
 				ContainerPort: gatewayPort,

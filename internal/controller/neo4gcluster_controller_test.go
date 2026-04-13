@@ -53,7 +53,7 @@ var _ = Describe("Neo4gCluster Controller", func() {
 					},
 					Spec: neo4gv1alpha1.Neo4gClusterSpec{
 						Replicas: 1,
-						Image:    "ghcr.io/seankohjs/neo4g:latest",
+						Image:    "ghcr.io/neo4g/neo4g:latest",
 					},
 				}
 				Expect(k8sClient.Create(ctx, cr)).To(Succeed())

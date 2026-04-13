@@ -1,0 +1,20 @@
+apiVersion: neo4g.neo4g.io/v1alpha1
+kind: Neo4gCluster
+metadata:
+  name: dev-graph
+  namespace: default
+spec:
+  replicas: 1
+  image: "ghcr.io/neo4g/neo4g:latest"
+  storage:
+    size: "1Gi"
+  config:
+    poolSize: 512
+    walEnabled: true
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"

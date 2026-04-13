@@ -82,6 +82,9 @@ spec:
                   heartbeatTimeout:
                     default: 6s
                     type: string
+                  image:
+                    default: ghcr.io/neo4g/gateway:latest
+                    type: string
                   replicas:
                     default: 1
                     format: int32
@@ -89,7 +92,7 @@ spec:
                     type: integer
                 type: object
               image:
-                default: ghcr.io/seankohjs/neo4g:latest
+                default: ghcr.io/neo4g/neo4g:latest
                 type: string
               replicas:
                 default: 1
