@@ -66,7 +66,7 @@ kubectl get pods -w
 
 ### 6. Access Neo4g
 
-The client service is available at `dev-graph.default.svc:7474` inside the cluster.
+The client service is available at `dev-graph.default.svc:7474` inside the cluster. That port is the HTTP query API. Replicas and the gateway reach each pod over gRPC on port 9474, which is published only by the headless Service.
 
 Port-forward to localhost:
 

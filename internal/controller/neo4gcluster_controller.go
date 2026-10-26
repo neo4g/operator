@@ -40,7 +40,8 @@ import (
 )
 
 const (
-	neo4gPort    = 7474
+	neo4gPort    = 7474 // client HTTP (POST /api/query, GET /api/health)
+	grpcPort     = 9474 // internal gRPC between gateway, replicas, and primary
 	gatewayPort  = 7480
 	dataDir      = "/data"
 	labelCluster = "neo4g.io/cluster"
@@ -126,11 +127,18 @@ func (r *Neo4gClusterReconciler) reconcileHeadlessService(ctx context.Context, c
 		svc.Spec = corev1.ServiceSpec{
 			ClusterIP: corev1.ClusterIPNone,
 			Selector:  baseLabels(c),
-			Ports: []corev1.ServicePort{{
-				Name:       "neo4g",
-				Port:       neo4gPort,
-				TargetPort: intstr.FromInt(neo4gPort),
-			}},
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "neo4g",
+					Port:       neo4gPort,
+					TargetPort: intstr.FromInt(neo4gPort),
+				},
+				{
+					Name:       "grpc",
+					Port:       grpcPort,
+					TargetPort: intstr.FromInt(grpcPort),
+				},
+			},
 			PublishNotReadyAddresses: true,
 		}
 		return nil
@@ -162,7 +170,7 @@ func (r *Neo4gClusterReconciler) reconcileStatefulSet(ctx context.Context, c *ne
 		sts.Spec.Selector = &metav1.LabelSelector{MatchLabels: labels}
 
 		headlessSvc := c.Name + "-headless"
-		primaryAddr := fmt.Sprintf("http://%s-0.%s.%s.svc:%d", c.Name, headlessSvc, c.Namespace, neo4gPort)
+		primaryAddr := fmt.Sprintf("%s-0.%s.%s.svc:%d", c.Name, headlessSvc, c.Namespace, grpcPort)
 
 		env := r.buildNodeEnv(c, primaryAddr)
 
@@ -183,14 +191,20 @@ fi
 exec neo4g`
 
 		container := corev1.Container{
-			Name:    "neo4g",
+			Name:            "neo4g",
 			Image:           image,
 			ImagePullPolicy: corev1.PullAlways,
 			Command:         []string{"sh", "-c", roleScript},
-			Ports: []corev1.ContainerPort{{
-				Name:          "neo4g",
-				ContainerPort: neo4gPort,
-			}},
+			Ports: []corev1.ContainerPort{
+				{
+					Name:          "neo4g",
+					ContainerPort: neo4gPort,
+				},
+				{
+					Name:          "grpc",
+					ContainerPort: grpcPort,
+				},
+			},
 			Env:       env,
 			Resources: c.Spec.Resources,
 			VolumeMounts: []corev1.VolumeMount{{
@@ -269,6 +283,7 @@ func (r *Neo4gClusterReconciler) buildNodeEnv(c *neo4gv1alpha1.Neo4gCluster, pri
 			},
 		},
 		{Name: "NEO4G_LISTEN_ADDR", Value: fmt.Sprintf(":%d", neo4gPort)},
+		{Name: "NEO4G_GRPC_ADDR", Value: fmt.Sprintf(":%d", grpcPort)},
 		{Name: "NEO4G_DATA_DIR", Value: dataDir},
 	}
 
@@ -351,7 +366,7 @@ func (r *Neo4gClusterReconciler) reconcileGatewayDeployment(ctx context.Context,
 		}
 
 		container := corev1.Container{
-			Name:  "neo4g-gateway",
+			Name:            "neo4g-gateway",
 			Image:           gwImage,
 			ImagePullPolicy: corev1.PullAlways,
 			Ports: []corev1.ContainerPort{{
@@ -386,7 +401,7 @@ func (r *Neo4gClusterReconciler) buildGatewayNodeList(c *neo4gv1alpha1.Neo4gClus
 	var parts []string
 	for i := int32(0); i < c.Spec.Replicas; i++ {
 		podName := fmt.Sprintf("%s-%d", c.Name, i)
-		addr := fmt.Sprintf("%s=http://%s.%s.%s.svc:%d", podName, podName, headlessSvc, c.Namespace, neo4gPort)
+		addr := fmt.Sprintf("%s=%s.%s.%s.svc:%d", podName, podName, headlessSvc, c.Namespace, grpcPort)
 		parts = append(parts, addr)
 	}
 	return strings.Join(parts, ",")

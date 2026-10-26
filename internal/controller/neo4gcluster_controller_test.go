@@ -21,6 +21,8 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -80,6 +82,67 @@ var _ = Describe("Neo4gCluster Controller", func() {
 				NamespacedName: typeNamespacedName,
 			})
 			Expect(err).NotTo(HaveOccurred())
+
+			By("exposing HTTP for clients and gRPC for internal traffic")
+			var sts appsv1.StatefulSet
+			Expect(k8sClient.Get(ctx, typeNamespacedName, &sts)).To(Succeed())
+			Expect(envValue(sts.Spec.Template.Spec.Containers[0].Env, "NEO4G_LISTEN_ADDR")).To(Equal(":7474"))
+			Expect(envValue(sts.Spec.Template.Spec.Containers[0].Env, "NEO4G_GRPC_ADDR")).To(Equal(":9474"))
+			Expect(envValue(sts.Spec.Template.Spec.Containers[0].Env, "NEO4G_PRIMARY_ADDR")).To(Equal(
+				"test-cluster-0.test-cluster-headless.default.svc:9474",
+			))
+
+			var headless corev1.Service
+			Expect(k8sClient.Get(ctx, types.NamespacedName{
+				Name: resourceName + "-headless", Namespace: "default",
+			}, &headless)).To(Succeed())
+			Expect(servicePort(headless.Spec.Ports, "neo4g")).To(Equal(int32(7474)))
+			Expect(servicePort(headless.Spec.Ports, "grpc")).To(Equal(int32(9474)))
+
+			var clientSvc corev1.Service
+			Expect(k8sClient.Get(ctx, typeNamespacedName, &clientSvc)).To(Succeed())
+			Expect(clientSvc.Spec.Ports).To(HaveLen(1))
+			Expect(clientSvc.Spec.Ports[0].Port).To(Equal(int32(7474)))
+
+			By("pointing the gateway at node gRPC addresses")
+			cr := &neo4gv1alpha1.Neo4gCluster{}
+			Expect(k8sClient.Get(ctx, typeNamespacedName, cr)).To(Succeed())
+			cr.Spec.Replicas = 3
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
+			_, err = controllerReconciler.Reconcile(ctx, reconcile.Request{
+				NamespacedName: typeNamespacedName,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			var deploy appsv1.Deployment
+			Expect(k8sClient.Get(ctx, types.NamespacedName{
+				Name: resourceName + "-gateway", Namespace: "default",
+			}, &deploy)).To(Succeed())
+			nodes := envValue(deploy.Spec.Template.Spec.Containers[0].Env, "NEO4G_GW_NODES")
+			Expect(nodes).To(Equal(
+				"test-cluster-0=test-cluster-0.test-cluster-headless.default.svc:9474," +
+					"test-cluster-1=test-cluster-1.test-cluster-headless.default.svc:9474," +
+					"test-cluster-2=test-cluster-2.test-cluster-headless.default.svc:9474",
+			))
+			Expect(nodes).NotTo(ContainSubstring("http://"))
 		})
 	})
 })
+
+func envValue(env []corev1.EnvVar, name string) string {
+	for _, e := range env {
+		if e.Name == name {
+			return e.Value
+		}
+	}
+	return ""
+}
+
+func servicePort(ports []corev1.ServicePort, name string) int32 {
+	for _, p := range ports {
+		if p.Name == name {
+			return p.Port
+		}
+	}
+	return 0
+}
