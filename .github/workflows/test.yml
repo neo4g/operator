@@ -2,6 +2,8 @@ name: Tests
 
 on:
   push:
+    branches: ["**"]
+    tags: ["v*"]
     paths:
       - "**.go"
       - go.mod
@@ -9,7 +11,11 @@ on:
       - Makefile
       - "api/**"
       - "config/**"
+      - Dockerfile
+      - ".github/workflows/docker-publish.yml"
+      - ".github/workflows/test.yml"
   pull_request:
+    branches: [main]
     paths:
       - "**.go"
       - go.mod
@@ -17,6 +23,10 @@ on:
       - Makefile
       - "api/**"
       - "config/**"
+      - Dockerfile
+      - ".github/workflows/docker-publish.yml"
+      - ".github/workflows/test.yml"
+  workflow_dispatch:
 
 jobs:
   test:
